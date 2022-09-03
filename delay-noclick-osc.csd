@@ -36,6 +36,7 @@ gidelsize init i(gkmaxdel)
 gimin 	init 	.01
 gicrossfadetime init .05
 gihandle OSCinit 8000
+gkSelectedTrack 1
 
 	instr 1	;track 1
 SDestIP strget 1
@@ -51,6 +52,7 @@ StapTempoOscAddress = p10
 SsaveOscAddress = p11
 SrecallOscAddress = p12
 iOscPort = p13
+iTrackNumber = p14
 
 ainputsig = 0
 kstarted = 0
@@ -247,10 +249,10 @@ out:
 </CsInstruments>
 
 <CsScore>
-i1 0 3600  "/1/fader1"  "/1/fader2"   "/1/toggle1"  "/1/toggle2"   "/1/fader3"  "/1/fader4"  "/1/push1" "/1/push2" "/1/push3"  9000 1
-i1 0 3600  "/2/fader1"  "/2/fader2"   "/2/toggle1"  "/2/toggle2"   "/2/fader3"  "/2/fader4"  "/2/push1" "/2/push2" "/2/push3"  9000 0
-i1 0 3600  "/3/fader1"  "/3/fader2"   "/3/toggle1"  "/3/toggle2"   "/3/fader3"  "/3/fader4"  "/3/push1" "/3/push2" "/3/push3"  9000 0
-i1 0 3600  "/4/fader1"  "/4/fader2"   "/4/toggle1"  "/4/toggle2"   "/4/fader3"  "/4/fader4"  "/4/push1" "/4/push2" "/4/push3"  9000 0
+i1 0 3600  "/1/fader1"  "/1/fader2"   "/1/toggle1"  "/1/toggle2"   "/1/fader3"  "/1/fader4"  "/1/push1" "/1/push2" "/1/push3"  9000 1 1
+i1 0 3600  "/2/fader1"  "/2/fader2"   "/2/toggle1"  "/2/toggle2"   "/2/fader3"  "/2/fader4"  "/2/push1" "/2/push2" "/2/push3"  9000 0 2
+i1 0 3600  "/3/fader1"  "/3/fader2"   "/3/toggle1"  "/3/toggle2"   "/3/fader3"  "/3/fader4"  "/3/push1" "/3/push2" "/3/push3"  9000 0 3
+i1 0 3600  "/4/fader1"  "/4/fader2"   "/4/toggle1"  "/4/toggle2"   "/4/fader3"  "/4/fader4"  "/4/push1" "/4/push2" "/4/push3"  9000 0 4
 ;i1 0 3600  "/1/fader2"  "/1/rotary4"   "/1/toggle3"  "/1/toggle4"   "/1/rotary5"  "/1/rotary6"  "/1/push2"  9000
 e
 </CsScore>
