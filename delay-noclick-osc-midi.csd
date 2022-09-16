@@ -6,7 +6,7 @@
 ; -B value and DMA buffer setting must be equal!
 ; 
 ; 2022.09.13:
-; csound -odac2 -iadc2 -b64 -B1024 -M2 -+rtaudio=coreaudio  --strset1=10.0.0.205 delay-noclick-osc-midi.csd
+; csound -odac2 -iadc2 -b64 -B1024 -M2 -+rtaudio=coreaudio  --strset1=10.0.0.205 --strset2=true delay-noclick-osc-midi.csd
 ;
 ;   where string #1 is the IP of source of OSC messages
 ; 
@@ -46,7 +46,26 @@ gksaved_delay_tap_point init 0
 
     instr 100
 SDestIP strget 1
-prints SDestIP
+;prints SDestIP
+
+SWrite strget 2
+iWrite strcmp "true", SWrite
+;prints SWrite
+
+;
+; yes, all this work to get a timestamp
+;
+itim     date
+Stim     dates     itim
+Syear    strsub    Stim, 20, 24
+Smonth   strsub    Stim, 4, 7
+Sday     strsub    Stim, 8, 10
+iday     strtod    Sday
+Shor     strsub    Stim, 11, 13
+Smin     strsub    Stim, 14, 16
+Ssec     strsub    Stim, 17, 19
+Sfilnam  sprintf  "%s_%s_%02d_%s_%s_%s_track_%d.wav", Syear, Smonth, iday, Shor,Smin, Ssec, p15
+;prints Sfilnam
 
 SdelayPointOscAddress = p4
 SregenerationOscAddress = p5
@@ -307,6 +326,27 @@ aout = ainputsig + (aoutnew * kcf) + (aoutold * (1.0-kcf))
 aregenerated_signal = aout
 
 out aout*koutput_volume*koutput_volume_scalar
+
+if (ktrack = 1) then
+    if (iWrite = 0) then
+        fout Sfilnam, 8, aout*koutput_volume*koutput_volume_scalar
+    endif
+endif
+if (ktrack = 2) then
+    if (iWrite = 0) then
+        fout Sfilnam, 8, aout*koutput_volume*koutput_volume_scalar
+    endif
+endif
+if (ktrack = 3) then
+    if (iWrite = 0) then
+        fout Sfilnam, 8, aout*koutput_volume*koutput_volume_scalar
+    endif
+endif
+if (ktrack = 4) then
+    if (iWrite = 0) then
+        fout Sfilnam, 8, aout*koutput_volume*koutput_volume_scalar
+    endif
+endif
 
 endin
 </CsInstruments>
