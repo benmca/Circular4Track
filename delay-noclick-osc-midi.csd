@@ -328,7 +328,7 @@ aregenerated_signal = aout
 out aout*koutput_volume*koutput_volume_scalar
 
 if (iWrite = 0) then
-    fout Sfilnam, 18, aout*koutput_volume_scalar
+    fout Sfilnam, 8, aout*koutput_volume_scalar
 endif
 
 endin
