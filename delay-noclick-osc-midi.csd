@@ -5,7 +5,8 @@
 ;
 ; -B value and DMA buffer setting must be equal!
 ; 
-; 2019.09.20 - you want to call this like so:  csound -odac1 -iadc1 -b64 -B256 --strset1=10.0.0.102 delay-noclick-osc.csd
+; 2022.09.13:
+; csound -odac2 -iadc2 -b64 -B1024 -M2 -+rtaudio=coreaudio  --strset1=10.0.0.205 delay-noclick-osc-midi.csd
 ;
 ;   where string #1 is the IP of source of OSC messages
 ; 
@@ -13,8 +14,8 @@
 <CsoundSynthesizer>
 
 <CsInstruments>
-sr=96000
-kr=96000
+sr=44100
+kr=44100
 ksmps=1
 nchnls=1
 
@@ -26,7 +27,7 @@ pgmassign       0, 0
 ;***********************************************************
 ;   THIS IS THE MAXIMUM DELAY TIME
 ;***********************************************************
-#define totalDelayLineTime  #16#
+#define totalDelayLineTime  #32#
 ;***********************************************************
 ;   THIS IS THE IO Base channel - stereo output 
 ;   goes in and out from IOBaseChannel and 
@@ -40,6 +41,8 @@ gicrossfadetime init .05
 gihandle OSCinit 8000
 
 gkcurrent_track init 0
+
+gksaved_delay_tap_point init 0
 
     instr 100
 SDestIP strget 1
@@ -83,7 +86,7 @@ kregeneration_scalar init 0 ; regenerated signal scalar (see aregenerated_signal
 
 kdelay_tap_point init 0 ; delay point in line - update w/osc 
 ktap_tempo_comp_time init 0 ; used in tap tempo
-ksaved_delay_tap_point init 0
+;ksaved_delay_tap_point init 0
 
 kosc_delaytime init 0
 kosc_regentime init 0
@@ -121,14 +124,15 @@ endif
 
 kstatus, kchan, kdata1, kdata2  midiin
 if(kstatus != 0) then
-;    printks "kstatus= %f, kchan = %f, kdata1 = %f, kdata2 = %f\n", 0, kstatus, kchan, kdata1,kdata2
-    kmidi_input_toggled = (gkcurrent_track == ktrack && kstatus == 144.0 && kdata1 == 48.0) ? 1 : 0
-    kmidi_save = (gkcurrent_track == ktrack && kstatus == 144.0 && kdata1 == 49.0) ? 1 : 0
-    kmidi_tap = (gkcurrent_track == ktrack && kstatus == 144.0 && kdata1 == 50.0) ? 1 : 0
-    kmidi_output_toggled = (gkcurrent_track == ktrack && kstatus == 144.0 && kdata1 == 51.0) ? 1 : 0
-    kmidi_recall = (gkcurrent_track == ktrack && kstatus == 144.0 && kdata1 == 52.0) ? 1 : 0
-    kmidi_momentary_input_on = (gkcurrent_track == ktrack && kstatus == 144.0 && kdata1 == 53.0) ? 1 : 0
-    kmidi_momentary_input_off = (gkcurrent_track == ktrack && kstatus == 128.0 && kdata1 == 53.0) ? 1 : 0
+    ;printks "kstatus= %f, kchan = %f, kdata1 = %f, kdata2 = %f\n", 0, kstatus, kchan, kdata1,kdata2
+    kmidi_input_toggled = (gkcurrent_track == ktrack && kstatus == 144.0 && kdata1 == 48.0 && kdata2 != 0) ? 1 : 0
+    kmidi_save = (gkcurrent_track == ktrack && kstatus == 144.0 && kdata1 == 49.0 && kdata2 != 0) ? 1 : 0
+    kmidi_tap = (gkcurrent_track == ktrack && kstatus == 144.0 && kdata1 == 50.0 && kdata2 != 0) ? 1 : 0
+    kmidi_output_toggled = (gkcurrent_track == ktrack && kstatus == 144.0 && kdata1 == 51.0 && kdata2 != 0) ? 1 : 0
+    kmidi_recall = (gkcurrent_track == ktrack && kstatus == 144.0 && kdata1 == 52.0 && kdata2 != 0) ? 1 : 0
+    kmidi_momentary_input_on = (gkcurrent_track == ktrack && kstatus == 144.0 && kdata1 == 53.0 && kdata2 != 0) ? 1 : 0
+    kmidi_momentary_input_off = (gkcurrent_track == ktrack && ((kstatus == 128.0 && kdata1 == 53.0) || (kstatus == 144.0 && kdata1 == 53 && kdata2 == 0)))  ? 1 : 0
+    ; this case covers true note off as well as 'note on with 0 velocity', which should be treated as note off according to midi standard.
 endif
 
 k0 OSClisten gihandle, StrackSelectedOscAddress, "f", kosc_track_selected
@@ -230,20 +234,20 @@ endif
 
 k8  OSClisten gihandle, SsaveOscAddress, "f", kosc_push2val
 if (k8 == 1.0 || kmidi_save == 1) then
-    ksaved_delay_tap_point = kdelay_tap_point
+    gksaved_delay_tap_point = kdelay_tap_point
     ;printks "save: saved value: %f \n", .1, (ksaved_delay_tap_point / gidelsize)
-    printks "save: ksaved_delay_tap_point: %f \n", .001, ksaved_delay_tap_point
+    printks "save: gksaved_delay_tap_point: %f \n", .001, gksaved_delay_tap_point
     kmidi_save = 0
 endif
 
 k9  OSClisten gihandle, SrecallOscAddress, "f", kosc_push3val
 if (k9 == 1.0 || kmidi_recall == 1) then
-    printks "recall: ksaved_delay_tap_point: %f \n", .001, ksaved_delay_tap_point
+    printks "recall: gksaved_delay_tap_point: %f \n", .001, gksaved_delay_tap_point
     ktrig times
-    OSCsend ktrig, SDestIP, 9000, SdelayPointOscAddress, "f", (ksaved_delay_tap_point / gidelsize)
-    kdelay_tap_point = ksaved_delay_tap_point
+    OSCsend ktrig, SDestIP, 9000, SdelayPointOscAddress, "f", (gksaved_delay_tap_point / gidelsize)
+    kdelay_tap_point = gksaved_delay_tap_point
     printks "recall: kdelay_tap_point: %f \n", .001, kdelay_tap_point
-    printks "recall: ksaved_delay_tap_point: %f \n", .001, ksaved_delay_tap_point
+    printks "recall: gksaved_delay_tap_point: %f \n", .001, gksaved_delay_tap_point
     kmidi_recall = 0
 endif
 
