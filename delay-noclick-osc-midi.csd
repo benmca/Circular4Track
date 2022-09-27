@@ -23,27 +23,85 @@ nchnls=1
 massign 0,0
 pgmassign       0, 0
 ;minimal global vars - from old UI
-
-;***********************************************************
-;   THIS IS THE MAXIMUM DELAY TIME
-;***********************************************************
 #define totalDelayLineTime  #32#
-;***********************************************************
-;   THIS IS THE IO Base channel - stereo output 
-;   goes in and out from IOBaseChannel and 
-;   IOBaseChannel+1
-;***********************************************************
 #define IOBaseChannel   #1#
 gkmaxdel    init $totalDelayLineTime
 gidelsize init i(gkmaxdel)
 gimin   init    .01
 gicrossfadetime init .05
 gihandle OSCinit 8000
-
 gkcurrent_track init 0
-
 gksaved_delay_tap_point init 0
+gkquantize_tempo init 0
 
+pyinit
+pyruni {{
+tempo_dict = {}
+flat_tempo_dict = {}
+
+for x in [60,120]:
+    s = []
+    for y in [1,2,4,8,12,16,20,24,28,32]:
+        s.append(y*60.0/x)
+    tempo_dict[x] = s
+
+for k, v in tempo_dict.items():
+    for i in range(len(v)-1, 0, -1):
+        if v[i] in flat_tempo_dict:
+            flat_tempo_dict[v[i]].append((k, i))
+        else:
+            flat_tempo_dict[v[i]] = [(k, i)]
+
+
+def find_match(i):
+    candidates = {}
+    sorted_keys = sorted(flat_tempo_dict.keys())
+    for k in sorted_keys:
+        v = flat_tempo_dict[k]
+        if i > k:
+            pass
+        else:
+            # am I closer to k or prev k
+            pos = sorted_keys.index(k)
+            if pos == 0:
+                print("first one")
+                candidates[k] = v
+                break
+            else:
+                prevk = sorted_keys[pos-1]
+                if i-k < i-prevk:
+                    candidates[k] = v
+                else:
+                    candidates[prevk] = flat_tempo_dict[prevk]
+                break
+
+    if len(candidates.keys()) == 0:
+        candidates[sorted_keys[len(sorted_keys)-1]] = flat_tempo_dict[sorted_keys[len(sorted_keys)-1]]
+
+    print(str(candidates))
+    print(str(list(candidates.keys())[0]))
+    return list(candidates.keys())[0]
+}}
+
+    instr 98
+SDestIP strget 1
+Squantize_toggle_addr = p4
+iOscPort = p5
+kosc_quantize_toggle init 0
+
+kcycles timek
+
+if (kcycles < 2) then
+    OSCsend kcycles, SDestIP, iOscPort, Squantize_toggle_addr, "f", kosc_quantize_toggle
+endif
+
+k1  OSClisten gihandle, "/5/toggle_tempo", "f", kosc_quantize_toggle
+if (k1 == 1.0) then
+    printks "toggling tempo quantize: %f \n", .001, kosc_quantize_toggle
+    gkquantize_tempo = kosc_quantize_toggle
+endif
+
+    endin
 
     instr 99
 SWrite strget 2
@@ -270,7 +328,11 @@ if ((k7 == 1.0 && kosc_push1val == 1.0) || kmidi_tap == 1) then
 tap_tempo_compare:
     ktemptime times
     krate1 = ktemptime - ktap_tempo_comp_time
-    ;printks "krate: %f \n", .1, krate1
+    if gkquantize_tempo == 1 then
+        krate_quantized pycall1 "find_match", krate1
+        krate1 = krate_quantized
+    endif
+    printks "krate: %f, quantized: %f \n", .1, krate1, krate_quantized
     ;printks "gidelsize: %f \n", .1, gidelsize
     OSCsend (krate1 / gidelsize), SDestIP, 9000, SdelayPointOscAddress, "f", (krate1 / gidelsize)
     ;printks "fader set to : %f \n", .1, (krate1 / gidelsize)
@@ -364,6 +426,7 @@ endin
 </CsInstruments>
 
 <CsScore>
+i98 0 3600 "/5/toggle_tempo" 9000
 i99 0 3600
 i100 0 3600  "/1/fader1"  "/1/fader2"   "/1/toggle1"  "/1/toggle2"   "/1/fader3"  "/1/fader4"  "/1/push1" "/1/push2" "/1/push3"  9000 1 0 "/pager1"
 i100 0 3600  "/2/fader1"  "/2/fader2"   "/2/toggle1"  "/2/toggle2"   "/2/fader3"  "/2/fader4"  "/2/push1" "/2/push2" "/2/push3"  9000 0 1 "/pager1"
