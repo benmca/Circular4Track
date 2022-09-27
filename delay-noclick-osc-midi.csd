@@ -44,6 +44,35 @@ gkcurrent_track init 0
 
 gksaved_delay_tap_point init 0
 
+
+    instr 99
+SWrite strget 2
+iWrite strcmp "true", SWrite
+
+
+itim     date
+Stim     dates     itim
+Syear    strsub    Stim, 20, 24
+Smonth   strsub    Stim, 4, 7
+Sday     strsub    Stim, 8, 10
+iday     strtod    Sday
+Shor     strsub    Stim, 11, 13
+Smin     strsub    Stim, 14, 16
+Ssec     strsub    Stim, 17, 19
+Sfilnam  sprintf  "output/%s_%s_%02d_%s_%s_%s_raw_%d.wav", Syear, Smonth, iday, Shor,Smin, Ssec, p15
+
+
+kchan = $IOBaseChannel
+ainputsig inch kchan
+
+if (iWrite = 0) then
+    fout Sfilnam, 8, ainputsig
+endif
+
+
+
+    endin
+
     instr 100
 SDestIP strget 1
 ;prints SDestIP
@@ -64,7 +93,7 @@ iday     strtod    Sday
 Shor     strsub    Stim, 11, 13
 Smin     strsub    Stim, 14, 16
 Ssec     strsub    Stim, 17, 19
-Sfilnam  sprintf  "%s_%s_%02d_%s_%s_%s_track_%d.wav", Syear, Smonth, iday, Shor,Smin, Ssec, p15
+Sfilnam  sprintf  "output/%s_%s_%02d_%s_%s_%s_track_%d.wav", Syear, Smonth, iday, Shor,Smin, Ssec, p15
 ;prints Sfilnam
 
 SdelayPointOscAddress = p4
@@ -137,7 +166,7 @@ if (kcycles < 2) then
     OSCsend kcycles, SDestIP, iOscPort, SoutputToggleOscAddress, "f", koutput_on_off
     OSCsend kcycles, SDestIP, iOscPort, SinputVolumeOscAddress, "f", kinput_volume
     OSCsend kcycles, SDestIP, iOscPort, SoutputVolumeOscAddress, "f", koutput_volume
-    printks "\ntrack %f started\n", .001, ktrack
+    ;printks "\ntrack %f started\n", .001, ktrack
 endif
 
 
@@ -157,33 +186,33 @@ endif
 k0 OSClisten gihandle, StrackSelectedOscAddress, "f", kosc_track_selected
 if (k0 == 1.0) then
     gkcurrent_track = kosc_track_selected
-    printks "setting global track to %f\n", .0001, gkcurrent_track 
+    ;printks "setting global track to %f\n", .0001, gkcurrent_track 
 endif
 
 k1  OSClisten gihandle, SdelayPointOscAddress, "f", kosc_delaytime
 if (k1 == 1.0) then 
-    printks "kosc_delaytime: %f \n", .001, kosc_delaytime
+    ;printks "kosc_delaytime: %f \n", .001, kosc_delaytime
     kdelay_tap_point = (kosc_delaytime * (gkmaxdel - gimin)) + gimin
-    printks "kdelay_tap_point: %f \n", .001, kdelay_tap_point
+    ;printks "kdelay_tap_point: %f \n", .001, kdelay_tap_point
 endif
 
 k2  OSClisten gihandle, SregenerationOscAddress, "f", kosc_regentime
 if (k2 == 1.0) then
-    printks "kosc_regentime: %f \n", .001, kosc_regentime
+    ;printks "kosc_regentime: %f \n", .001, kosc_regentime
     kregeneration_scalar = kosc_regentime
 endif
 
 k3  OSClisten gihandle, SinputToggleOscAddress, "f", kosc_input_on
 if (k3 == 1.0) then
-    printks "kosc_input_on: %f \n", .001, kosc_input_on
+    ;printks "kosc_input_on: %f \n", .001, kosc_input_on
     kinput_on_off = kosc_input_on
 endif 
 
 if kmidi_input_toggled == 1 then
-    printks "midi_input_toggled - kinput_on_off is initially %f\n", .001, kinput_on_off 
+    ;printks "midi_input_toggled - kinput_on_off is initially %f\n", .001, kinput_on_off 
     kinput_on_off = (kinput_on_off == 0 ? 1 : 0)
     OSCsend kcycles, SDestIP, 9000, SinputToggleOscAddress, "f", kinput_on_off 
-    printks "midi_input_toggled - kinput_on_off is now %f\n", .001, kinput_on_off 
+    ;printks "midi_input_toggled - kinput_on_off is now %f\n", .001, kinput_on_off 
     kmidi_input_toggled = 0
 endif
 
@@ -192,7 +221,7 @@ if (kmidi_momentary_input_on == 1 && kmidi_momentary_in_progress == 0) then
     kinput_on_off = (kinput_on_off == 0 ? 1 : 0)
     kmidi_momentary_in_progress = 1
     OSCsend kcycles, SDestIP, 9000, SinputToggleOscAddress, "f", kinput_on_off 
-    printks "on", .001
+    ;printks "on", .001
 endif
 
 if (kmidi_momentary_input_off == 1) then
@@ -201,50 +230,50 @@ if (kmidi_momentary_input_off == 1) then
     kinput_on_off = (kinput_on_off == 0 ? 1 : 0)
     OSCsend kcycles, SDestIP, 9000, SinputToggleOscAddress, "f", kinput_on_off 
     kmidi_momentary_in_progress = 0
-    printks "off", .001
+    ;printks "off", .001
 endif
 
 k4  OSClisten gihandle, SoutputToggleOscAddress, "f", kosc_output_on
 if (k4 == 1.0) then
-    printks "kosc_output_on: %f \n", .001, kosc_output_on
+    ;printks "kosc_output_on: %f \n", .001, kosc_output_on
     koutput_on_off = kosc_output_on
     kmidi_output_toggled = 0
 endif
 
 if kmidi_output_toggled == 1 then
-    printks "midi_output_toggled - koutput_on_off is initially %f\n", .001, koutput_on_off 
+    ;printks "midi_output_toggled - koutput_on_off is initially %f\n", .001, koutput_on_off 
     koutput_on_off = (koutput_on_off == 0 ? 1 : 0)
     OSCsend kcycles, SDestIP, 9000, SoutputToggleOscAddress, "f", koutput_on_off 
-    printks "midi_output_toggled - koutput_on_off is now %f\n", .001, koutput_on_off 
+    ;printks "midi_output_toggled - koutput_on_off is now %f\n", .001, koutput_on_off 
     kmidi_output_toggled = 0
 endif
 
 k5  OSClisten gihandle, SinputVolumeOscAddress, "f", kosc_involume
 if (k5 == 1.0) then
-    printks "kosc_involume: %f \n", .001, kosc_involume
+    ;printks "kosc_involume: %f \n", .001, kosc_involume
     kinput_volume = kosc_involume
 endif
 
 k6  OSClisten gihandle, SoutputVolumeOscAddress, "f", kosc_outvolume
 if (k6 == 1.0) then
-    printks "kosc_outvolume: %f \n", .001, kosc_outvolume
+    ;printks "kosc_outvolume: %f \n", .001, kosc_outvolume
     koutput_volume = kosc_outvolume
 endif
 
 k7  OSClisten gihandle, StapTempoOscAddress, "f", kosc_push1val
 if ((k7 == 1.0 && kosc_push1val == 1.0) || kmidi_tap == 1) then
-    printks "tap recvd: %f \n", .001, kosc_push1val
+    ;printks "tap recvd: %f \n", .001, kosc_push1val
     if (ktap_tempo_comp_time > 0) kgoto tap_tempo_compare
     ktap_tempo_comp_time times
-    printks "gkcomptime: %f \n", .1, ktap_tempo_comp_time
+    ;printks "gkcomptime: %f \n", .1, ktap_tempo_comp_time
     kgoto tap_tempo_done
 tap_tempo_compare:
     ktemptime times
     krate1 = ktemptime - ktap_tempo_comp_time
-    printks "krate: %f \n", .1, krate1
-    printks "gidelsize: %f \n", .1, gidelsize
+    ;printks "krate: %f \n", .1, krate1
+    ;printks "gidelsize: %f \n", .1, gidelsize
     OSCsend (krate1 / gidelsize), SDestIP, 9000, SdelayPointOscAddress, "f", (krate1 / gidelsize)
-    printks "fader set to : %f \n", .1, (krate1 / gidelsize)
+    ;printks "fader set to : %f \n", .1, (krate1 / gidelsize)
     kdelay_tap_point = krate1
     ktap_tempo_comp_time = 0
 tap_tempo_done:
@@ -255,18 +284,18 @@ k8  OSClisten gihandle, SsaveOscAddress, "f", kosc_push2val
 if (k8 == 1.0 || kmidi_save == 1) then
     gksaved_delay_tap_point = kdelay_tap_point
     ;printks "save: saved value: %f \n", .1, (ksaved_delay_tap_point / gidelsize)
-    printks "save: gksaved_delay_tap_point: %f \n", .001, gksaved_delay_tap_point
+    ;printks "save: gksaved_delay_tap_point: %f \n", .001, gksaved_delay_tap_point
     kmidi_save = 0
 endif
 
 k9  OSClisten gihandle, SrecallOscAddress, "f", kosc_push3val
 if (k9 == 1.0 || kmidi_recall == 1) then
-    printks "recall: gksaved_delay_tap_point: %f \n", .001, gksaved_delay_tap_point
+    ;printks "recall: gksaved_delay_tap_point: %f \n", .001, gksaved_delay_tap_point
     ktrig times
     OSCsend ktrig, SDestIP, 9000, SdelayPointOscAddress, "f", (gksaved_delay_tap_point / gidelsize)
     kdelay_tap_point = gksaved_delay_tap_point
-    printks "recall: kdelay_tap_point: %f \n", .001, kdelay_tap_point
-    printks "recall: gksaved_delay_tap_point: %f \n", .001, gksaved_delay_tap_point
+    ;printks "recall: kdelay_tap_point: %f \n", .001, kdelay_tap_point
+    ;printks "recall: gksaved_delay_tap_point: %f \n", .001, gksaved_delay_tap_point
     kmidi_recall = 0
 endif
 
@@ -335,6 +364,7 @@ endin
 </CsInstruments>
 
 <CsScore>
+i99 0 3600
 i100 0 3600  "/1/fader1"  "/1/fader2"   "/1/toggle1"  "/1/toggle2"   "/1/fader3"  "/1/fader4"  "/1/push1" "/1/push2" "/1/push3"  9000 1 0 "/pager1"
 i100 0 3600  "/2/fader1"  "/2/fader2"   "/2/toggle1"  "/2/toggle2"   "/2/fader3"  "/2/fader4"  "/2/push1" "/2/push2" "/2/push3"  9000 0 1 "/pager1"
 i100 0 3600  "/3/fader1"  "/3/fader2"   "/3/toggle1"  "/3/toggle2"   "/3/fader3"  "/3/fader4"  "/3/push1" "/3/push2" "/3/push3"  9000 0 2 "/pager1"
