@@ -34,6 +34,8 @@ gkcurrent_track init 0
 gksaved_delay_tap_point init 0
 gkquantize_tempo init 0
 
+gaAudioSignals[] init 4
+
 pyinit
 pyruni {{
 tempo_dict = {}
@@ -84,6 +86,8 @@ def find_match(i):
     return list(candidates.keys())[0]
 }}
 
+
+; handles global settings page changes
     instr 98
 SDestIP strget 1
 Squantize_toggle_addr = p4
@@ -104,56 +108,11 @@ endif
 
     endin
 
-    instr 99
-SWrite strget 2
-iWrite strcmp "true", SWrite
-
-
-itim     date
-Stim     dates     itim
-Syear    strsub    Stim, 20, 24
-Smonth   strsub    Stim, 4, 7
-Sday     strsub    Stim, 8, 10
-iday     strtod    Sday
-Shor     strsub    Stim, 11, 13
-Smin     strsub    Stim, 14, 16
-Ssec     strsub    Stim, 17, 19
-Sfilnam  sprintf  "output/%s_%s_%02d_%s_%s_%s_raw_%d.wav", Syear, Smonth, iday, Shor,Smin, Ssec, p15
-
-
-kchan = $IOBaseChannel
-ainputsig inch kchan
-
-if (iWrite = 0) then
-    fout Sfilnam, 8, ainputsig
-endif
-
-
-
-    endin
-
     instr 100
 SDestIP strget 1
 ;prints SDestIP
 
-SWrite strget 2
-iWrite strcmp "true", SWrite
-;prints SWrite
-
-;
-; yes, all this work to get a timestamp
-;
-itim     date
-Stim     dates     itim
-Syear    strsub    Stim, 20, 24
-Smonth   strsub    Stim, 4, 7
-Sday     strsub    Stim, 8, 10
-iday     strtod    Sday
-Shor     strsub    Stim, 11, 13
-Smin     strsub    Stim, 14, 16
-Ssec     strsub    Stim, 17, 19
-Sfilnam  sprintf  "output/%s_%s_%02d_%s_%s_%s_track_%d.wav", Syear, Smonth, iday, Shor,Smin, Ssec, p15
-;prints Sfilnam
+;printks "here", .01
 
 SdelayPointOscAddress = p4
 SregenerationOscAddress = p5
@@ -225,7 +184,7 @@ if (kcycles < 2) then
     OSCsend kcycles, SDestIP, iOscPort, SoutputToggleOscAddress, "f", koutput_on_off
     OSCsend kcycles, SDestIP, iOscPort, SinputVolumeOscAddress, "f", kinput_volume
     OSCsend kcycles, SDestIP, iOscPort, SoutputVolumeOscAddress, "f", koutput_volume
-    ;printks "\ntrack %f started\n", .001, ktrack
+;    printks "\ntrack %f started\n", .001, ktrack
 endif
 
 
@@ -419,22 +378,58 @@ aout = ainputsig + (aoutnew * kcf) + (aoutold * (1.0-kcf))
 aregenerated_signal = aout
 
 out aout*koutput_volume*koutput_volume_scalar
-
-if (iWrite = 0) then
-    fout Sfilnam, 8, aout*koutput_volume_scalar
-endif
+gaAudioSignals[p15] = aout*koutput_volume_scalar
 
 endin
+
+
+; handles file output
+    instr 101
+SWrite strget 2
+iWrite strcmp "true", SWrite
+
+if (iWrite = 0) then
+
+itim     date
+Stim     dates     itim
+Syear    strsub    Stim, 20, 24
+Smonth   strsub    Stim, 4, 7
+Sday     strsub    Stim, 8, 10
+iday     strtod    Sday
+Shor     strsub    Stim, 11, 13
+Smin     strsub    Stim, 14, 16
+Ssec     strsub    Stim, 17, 19
+Srawfilename  sprintf  "output/%s_%s_%02d_%s_%s_%s_raw.wav", Syear, Smonth, iday, Shor,Smin, Ssec
+SFileNames[] init 4
+
+SFileNames[0] sprintf "output/%s_%s_%02d_%s_%s_%s_track_%d.wav", Syear, Smonth, iday, Shor,Smin, Ssec, 0
+SFileNames[1] sprintf "output/%s_%s_%02d_%s_%s_%s_track_%d.wav", Syear, Smonth, iday, Shor,Smin, Ssec, 1
+SFileNames[2] sprintf "output/%s_%s_%02d_%s_%s_%s_track_%d.wav", Syear, Smonth, iday, Shor,Smin, Ssec, 2
+SFileNames[3] sprintf "output/%s_%s_%02d_%s_%s_%s_track_%d.wav", Syear, Smonth, iday, Shor,Smin, Ssec, 3
+
+; raw file output
+kchan = $IOBaseChannel
+ainputsig inch kchan
+
+fout Srawfilename, 8, ainputsig
+fout SFileNames[0], 8, gaAudioSignals[0]
+fout SFileNames[1], 8, gaAudioSignals[1]
+fout SFileNames[2], 8, gaAudioSignals[2]
+fout SFileNames[3], 8, gaAudioSignals[3]
+
+endif
+    endin
+
 </CsInstruments>
 
 <CsScore>
 i98 0 3600 "/5/toggle_tempo" 9000
-i99 0 3600
 i100 0 3600  "/1/fader1"  "/1/fader2"   "/1/toggle1"  "/1/toggle2"   "/1/fader3"  "/1/fader4"  "/1/push1" "/1/push2" "/1/push3"  9000 0 0 "/pager1"
 i100 0 3600  "/2/fader1"  "/2/fader2"   "/2/toggle1"  "/2/toggle2"   "/2/fader3"  "/2/fader4"  "/2/push1" "/2/push2" "/2/push3"  9000 0 1 "/pager1"
 i100 0 3600  "/3/fader1"  "/3/fader2"   "/3/toggle1"  "/3/toggle2"   "/3/fader3"  "/3/fader4"  "/3/push1" "/3/push2" "/3/push3"  9000 0 2 "/pager1"
 i100 0 3600  "/4/fader1"  "/4/fader2"   "/4/toggle1"  "/4/toggle2"   "/4/fader3"  "/4/fader4"  "/4/push1" "/4/push2" "/4/push3"  9000 0 3 "/pager1"
-;i1 0 3600  "/1/fader2"  "/1/rotary4"   "/1/toggle3"  "/1/toggle4"   "/1/rotary5"  "/1/rotary6"  "/1/push2"  9000
+
+i101 0 3600
 e
 </CsScore>
 
