@@ -126,6 +126,7 @@ SrecallOscAddress = p12
 iOscPort = p13
 ktrack init p15
 StrackSelectedOscAddress = p16
+SkillSwitchOscAddress = p17
 
 ainputsig = 0
 
@@ -162,6 +163,7 @@ kosc_outvolume init 0
 kosc_push1val init 0
 kosc_push2val init 0
 kosc_push3val init 0
+kosc_push4val init 0
 kosc_track_selected init 0
 
 
@@ -170,9 +172,17 @@ kmidi_input_toggled init 0
 kmidi_output_toggled init 0
 kmidi_tap init 0
 kmidi_save init 0
-kmidi_recall init 0
 kmidi_momentary_input_on init 0
 kmidi_momentary_in_progress init 0
+
+; this is set when we kill this instance via osc
+kdying_time init 0
+; generate string to use with schedwhen in case of reinit
+SReinitString  sprintfk {{i100 0 3600 "%s" "%s" "%s" "%s" "%s" "%s" "%s" "%s" "%s" %d %d %d "%s" "%s" }}, SdelayPointOscAddress, SregenerationOscAddress, SinputToggleOscAddress, SoutputToggleOscAddress, SinputVolumeOscAddress, SoutputVolumeOscAddress, StapTempoOscAddress, SsaveOscAddress, SrecallOscAddress, iOscPort, kinput_on_off, ktrack, StrackSelectedOscAddress, SkillSwitchOscAddress
+;prints SReinitString
+;prints "\n"
+
+
 
 kcycles timek
 
@@ -184,9 +194,12 @@ if (kcycles < 2) then
     OSCsend kcycles, SDestIP, iOscPort, SoutputToggleOscAddress, "f", koutput_on_off
     OSCsend kcycles, SDestIP, iOscPort, SinputVolumeOscAddress, "f", kinput_volume
     OSCsend kcycles, SDestIP, iOscPort, SoutputVolumeOscAddress, "f", koutput_volume
-;    printks "\ntrack %f started\n", .001, ktrack
 endif
 
+if (kdying_time > 0 && kdying_time < kcycles + 3) then
+    printks "\nrestarting track %f\n", 2, ktrack
+    turnoff
+endif
 
 kstatus, kchan, kdata1, kdata2  midiin
 if(kstatus != 0) then
@@ -211,7 +224,7 @@ k1  OSClisten gihandle, SdelayPointOscAddress, "f", kosc_delaytime
 if (k1 == 1.0) then 
     ;printks "kosc_delaytime: %f \n", .001, kosc_delaytime
     kdelay_tap_point = (kosc_delaytime * (gkmaxdel - gimin)) + gimin
-    ;printks "kdelay_tap_point: %f \n", .001, kdelay_tap_point
+    printks "kdelay_tap_point: %f \n", .001, kdelay_tap_point
 endif
 
 k2  OSClisten gihandle, SregenerationOscAddress, "f", kosc_regentime
@@ -322,6 +335,12 @@ if (k9 == 1.0 || kmidi_recall == 1) then
     kmidi_recall = 0
 endif
 
+k10  OSClisten gihandle, SkillSwitchOscAddress, "f", kosc_push4val
+if (k10 == 1.0) then
+    scoreline SReinitString, 1
+    kdying_time = kcycles
+endif
+
 kinput_volume_scalar portk  kinput_on_off, .0005
 koutput_volume_scalar portk  koutput_on_off, .0005
 
@@ -424,10 +443,10 @@ endif
 
 <CsScore>
 i98 0 3600 "/5/toggle_tempo" 9000
-i100 0 3600  "/1/fader1"  "/1/fader2"   "/1/toggle1"  "/1/toggle2"   "/1/fader3"  "/1/fader4"  "/1/push1" "/1/push2" "/1/push3"  9000 0 0 "/pager1"
-i100 0 3600  "/2/fader1"  "/2/fader2"   "/2/toggle1"  "/2/toggle2"   "/2/fader3"  "/2/fader4"  "/2/push1" "/2/push2" "/2/push3"  9000 0 1 "/pager1"
-i100 0 3600  "/3/fader1"  "/3/fader2"   "/3/toggle1"  "/3/toggle2"   "/3/fader3"  "/3/fader4"  "/3/push1" "/3/push2" "/3/push3"  9000 0 2 "/pager1"
-i100 0 3600  "/4/fader1"  "/4/fader2"   "/4/toggle1"  "/4/toggle2"   "/4/fader3"  "/4/fader4"  "/4/push1" "/4/push2" "/4/push3"  9000 0 3 "/pager1"
+i100 0 3600  "/1/fader1"  "/1/fader2"   "/1/toggle1"  "/1/toggle2"   "/1/fader3"  "/1/fader4"  "/1/push1" "/1/push2" "/1/push3"  9000 0 0 "/pager1" "/1/push4"
+i100 0 3600  "/2/fader1"  "/2/fader2"   "/2/toggle1"  "/2/toggle2"   "/2/fader3"  "/2/fader4"  "/2/push1" "/2/push2" "/2/push3"  9000 0 1 "/pager1" "/2/push4"
+i100 0 3600  "/3/fader1"  "/3/fader2"   "/3/toggle1"  "/3/toggle2"   "/3/fader3"  "/3/fader4"  "/3/push1" "/3/push2" "/3/push3"  9000 0 2 "/pager1" "/3/push4"
+i100 0 3600  "/4/fader1"  "/4/fader2"   "/4/toggle1"  "/4/toggle2"   "/4/fader3"  "/4/fader4"  "/4/push1" "/4/push2" "/4/push3"  9000 0 3 "/pager1" "/4/push4"
 
 i101 0 3600
 e
