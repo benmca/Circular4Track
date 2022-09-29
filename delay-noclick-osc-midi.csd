@@ -39,9 +39,10 @@ pyruni {{
 tempo_dict = {}
 flat_tempo_dict = {}
 
-for x in [60,120]:
+for x in [80,120]:
     s = []
-    for y in [1,2,4,8,12,16,20,24,28,32]:
+    for y in range(1,33):
+#    for y in [1,2,4,8,12,16,20,24,28,32]:
         s.append(y*60.0/x)
     tempo_dict[x] = s
 
@@ -69,7 +70,7 @@ def find_match(i):
                 break
             else:
                 prevk = sorted_keys[pos-1]
-                if i-k < i-prevk:
+                if abs(i-k) < abs(i-prevk):
                     candidates[k] = v
                 else:
                     candidates[prevk] = flat_tempo_dict[prevk]
@@ -192,7 +193,6 @@ kregeneration_scalar init 0 ; regenerated signal scalar (see aregenerated_signal
 
 kdelay_tap_point init 0 ; delay point in line - update w/osc 
 ktap_tempo_comp_time init 0 ; used in tap tempo
-;ksaved_delay_tap_point init 0
 
 kosc_delaytime init 0
 kosc_regentime init 0
@@ -328,11 +328,12 @@ if ((k7 == 1.0 && kosc_push1val == 1.0) || kmidi_tap == 1) then
 tap_tempo_compare:
     ktemptime times
     krate1 = ktemptime - ktap_tempo_comp_time
+    printks "krate: %f\n", .1, krate1
     if gkquantize_tempo == 1 then
         krate_quantized pycall1 "find_match", krate1
         krate1 = krate_quantized
+        printks "quantized: %f \n", .1, krate1
     endif
-    printks "krate: %f, quantized: %f \n", .1, krate1, krate_quantized
     ;printks "gidelsize: %f \n", .1, gidelsize
     OSCsend (krate1 / gidelsize), SDestIP, 9000, SdelayPointOscAddress, "f", (krate1 / gidelsize)
     ;printks "fader set to : %f \n", .1, (krate1 / gidelsize)
