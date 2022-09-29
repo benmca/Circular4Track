@@ -186,10 +186,10 @@ kinput_volume init 1    ; input volume
 koutput_volume init 1   ; output volume
 
 kinput_on_off init p14  ; input on/off
-koutput_on_off init 1   ; output on/off
+koutput_on_off init 0   ; output on/off
 
-aregenerated_signal init 0  ; regenerated signal - added to delay output * regen setting 
-kregeneration_scalar init 0 ; regenerated signal scalar (see aregenerated_signal)
+aregenerated_signal init 1  ; regenerated signal - added to delay output * regen setting
+kregeneration_scalar init 1 ; regenerated signal scalar (see aregenerated_signal)
 
 kdelay_tap_point init 0 ; delay point in line - update w/osc 
 ktap_tempo_comp_time init 0 ; used in tap tempo
@@ -218,7 +218,8 @@ kmidi_momentary_in_progress init 0
 kcycles timek
 
 if (kcycles < 2) then
-    OSCsend kcycles, SDestIP, iOscPort, SdelayPointOscAddress, "f", (kdelay_tap_point / (gkmaxdel - gimin)) + gimin
+;    OSCsend kcycles, SDestIP, iOscPort, SdelayPointOscAddress, "f", (kdelay_tap_point / (gkmaxdel - gimin)) + gimin
+    OSCsend kcycles, SDestIP, iOscPort, SdelayPointOscAddress, "f", 1
     OSCsend kcycles, SDestIP, iOscPort, SregenerationOscAddress, "f", kregeneration_scalar
     OSCsend kcycles, SDestIP, iOscPort, SinputToggleOscAddress, "f", kinput_on_off
     OSCsend kcycles, SDestIP, iOscPort, SoutputToggleOscAddress, "f", koutput_on_off
@@ -429,7 +430,7 @@ endin
 <CsScore>
 i98 0 3600 "/5/toggle_tempo" 9000
 i99 0 3600
-i100 0 3600  "/1/fader1"  "/1/fader2"   "/1/toggle1"  "/1/toggle2"   "/1/fader3"  "/1/fader4"  "/1/push1" "/1/push2" "/1/push3"  9000 1 0 "/pager1"
+i100 0 3600  "/1/fader1"  "/1/fader2"   "/1/toggle1"  "/1/toggle2"   "/1/fader3"  "/1/fader4"  "/1/push1" "/1/push2" "/1/push3"  9000 0 0 "/pager1"
 i100 0 3600  "/2/fader1"  "/2/fader2"   "/2/toggle1"  "/2/toggle2"   "/2/fader3"  "/2/fader4"  "/2/push1" "/2/push2" "/2/push3"  9000 0 1 "/pager1"
 i100 0 3600  "/3/fader1"  "/3/fader2"   "/3/toggle1"  "/3/toggle2"   "/3/fader3"  "/3/fader4"  "/3/push1" "/3/push2" "/3/push3"  9000 0 2 "/pager1"
 i100 0 3600  "/4/fader1"  "/4/fader2"   "/4/toggle1"  "/4/toggle2"   "/4/fader3"  "/4/fader4"  "/4/push1" "/4/push2" "/4/push3"  9000 0 3 "/pager1"
