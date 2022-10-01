@@ -43,7 +43,7 @@ flat_tempo_dict = {}
 
 for x in [80,120]:
     s = []
-    for y in range(1,33):
+    for y in range(1,65):
 #    for y in [1,2,4,8,12,16,20,24,28,32]:
         s.append(y*60.0/x)
     tempo_dict[x] = s
@@ -141,7 +141,7 @@ kinput_volume_triggered init 0 ;
 kinput_volume_scalar init 1 ; input volume
 kinput_volume_mod init 1
 
-kinput_volume init 1    ; input volume
+kinput_volume init .9    ; input volume
 koutput_volume init 1   ; output volume
 
 kinput_on_off init p14  ; input on/off
