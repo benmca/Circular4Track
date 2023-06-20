@@ -94,7 +94,13 @@ Squantize_toggle_addr = p4
 iOscPort = p5
 kosc_quantize_toggle init 0
 
-kcycles timek
+kreset_1 init 0
+kreset_2 init 0
+kreset_3 init 0
+kreset_4 init 0
+
+
+kcycles timeinstk
 
 if (kcycles < 2) then
     OSCsend kcycles, SDestIP, iOscPort, Squantize_toggle_addr, "f", kosc_quantize_toggle
@@ -106,13 +112,41 @@ if (k1 == 1.0) then
     gkquantize_tempo = kosc_quantize_toggle
 endif
 
+    k11  OSClisten gihandle, "/1/reset","f", kreset_1
+    if (k11 == 1.0) then 
+        turnoff2 100.1, 4, 0
+        scoreline "i100.1 0 3600  \"/1/fader1\"  \"/1/fader2\"   \"/1/toggle1\"  \"/1/toggle2\"   \"/1/fader3\"  \"/1/fader4\"  \"/1/push1\" \"/1/push2\" \"/1/push3\"  9000 0 0 \"/pager1\"", k11
+        printks "reset chan 1\n", .1
+    endif
+
+    k12  OSClisten gihandle, "/2/reset","f", kreset_2
+    if (k12 == 1.0) then 
+        turnoff2 100.2, 4, 0
+scoreline "i100.2 0 3600  \"/2/fader1\"  \"/2/fader2\"   \"/2/toggle1\"  \"/2/toggle2\"   \"/2/fader3\"  \"/2/fader4\"  \"/2/push1\" \"/2/push2\" \"/2/push3\"  9000 0 0 \"/pager1\"", k12
+        printks "reset chan 2\n", .1
+    endif
+
+    k13  OSClisten gihandle, "/3/reset","f", kreset_3
+    if (k13 == 1.0) then 
+        turnoff2 100.3, 4, 0
+scoreline "i100.3 0 3600  \"/3/fader1\"  \"/3/fader2\"   \"/3/toggle1\"  \"/3/toggle2\"   \"/3/fader3\"  \"/3/fader4\"  \"/3/push1\" \"/3/push2\" \"/3/push3\"  9000 0 0 \"/pager1\"", k13
+        printks "reset chan 3\n", .1
+    endif
+
+    k14  OSClisten gihandle, "/4/reset","f", kreset_4
+    if (k14 == 1.0) then 
+        turnoff2 100.4, 4, 0
+scoreline "i100.4 0 3600  \"/4/fader1\"  \"/4/fader2\"   \"/4/toggle1\"  \"/4/toggle2\"   \"/4/fader3\"  \"/4/fader4\"  \"/4/push1\" \"/4/push2\" \"/4/push3\"  9000 0 0 \"/pager1\"", k14
+        printks "reset chan 4\n", .1
+    endif
+
     endin
 
     instr 100
 SDestIP strget 1
 ;prints SDestIP
 
-;printks "here", .01
+printks "here", 1
 
 SdelayPointOscAddress = p4
 SregenerationOscAddress = p5
@@ -174,7 +208,7 @@ kmidi_recall init 0
 kmidi_momentary_input_on init 0
 kmidi_momentary_in_progress init 0
 
-kcycles timek
+kcycles timeinstk
 
 if (kcycles < 2) then
 ;    OSCsend kcycles, SDestIP, iOscPort, SdelayPointOscAddress, "f", (kdelay_tap_point / (gkmaxdel - gimin)) + gimin
@@ -184,7 +218,7 @@ if (kcycles < 2) then
     OSCsend kcycles, SDestIP, iOscPort, SoutputToggleOscAddress, "f", koutput_on_off
     OSCsend kcycles, SDestIP, iOscPort, SinputVolumeOscAddress, "f", kinput_volume
     OSCsend kcycles, SDestIP, iOscPort, SoutputVolumeOscAddress, "f", koutput_volume
-;    printks "\ntrack %f started\n", .001, ktrack
+    printks "\ntrack %f started - kcycles: %f\n", .001, ktrack, kcycles
 endif
 
 
@@ -419,17 +453,17 @@ fout SFileNames[3], 8, gaAudioSignals[3]
 
 endif
     endin
-
 </CsInstruments>
 
 <CsScore>
 i98 0 3600 "/5/toggle_tempo" 9000
-i100 0 3600  "/1/fader1"  "/1/fader2"   "/1/toggle1"  "/1/toggle2"   "/1/fader3"  "/1/fader4"  "/1/push1" "/1/push2" "/1/push3"  9000 0 0 "/pager1"
-i100 0 3600  "/2/fader1"  "/2/fader2"   "/2/toggle1"  "/2/toggle2"   "/2/fader3"  "/2/fader4"  "/2/push1" "/2/push2" "/2/push3"  9000 0 1 "/pager1"
-i100 0 3600  "/3/fader1"  "/3/fader2"   "/3/toggle1"  "/3/toggle2"   "/3/fader3"  "/3/fader4"  "/3/push1" "/3/push2" "/3/push3"  9000 0 2 "/pager1"
-i100 0 3600  "/4/fader1"  "/4/fader2"   "/4/toggle1"  "/4/toggle2"   "/4/fader3"  "/4/fader4"  "/4/push1" "/4/push2" "/4/push3"  9000 0 3 "/pager1"
+i100.1 0 3600  "/1/fader1"  "/1/fader2"   "/1/toggle1"  "/1/toggle2"   "/1/fader3"  "/1/fader4"  "/1/push1" "/1/push2" "/1/push3"  9000 0 0 "/pager1"
+i100.2 0 3600  "/2/fader1"  "/2/fader2"   "/2/toggle1"  "/2/toggle2"   "/2/fader3"  "/2/fader4"  "/2/push1" "/2/push2" "/2/push3"  9000 0 1 "/pager1"
+i100.3 0 3600  "/3/fader1"  "/3/fader2"   "/3/toggle1"  "/3/toggle2"   "/3/fader3"  "/3/fader4"  "/3/push1" "/3/push2" "/3/push3"  9000 0 2 "/pager1"
+i100.4 0 3600  "/4/fader1"  "/4/fader2"   "/4/toggle1"  "/4/toggle2"   "/4/fader3"  "/4/fader4"  "/4/push1" "/4/push2" "/4/push3"  9000 0 3 "/pager1"
 
 i101 0 3600
+
 e
 </CsScore>
 
