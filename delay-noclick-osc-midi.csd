@@ -118,6 +118,8 @@ kstatus, kchan, kdata1, kdata2  midiin
 if(kstatus != 0) then
     ;printks "kstatus= %f, kchan = %f, kdata1 = %f, kdata2 = %f\n", 0, kstatus, kchan, kdata1,kdata2
     kmidi_reset = ((kstatus == 128.0 && kdata1 == 63.0) || (kstatus == 144.0 && kdata1 == 63.0 && kdata2 == 0))  ? 1 : 0
+    kmidi_trackdown = ((kstatus == 128.0 && kdata1 == 61.0) || (kstatus == 144.0 && kdata1 == 61.0 && kdata2 == 0))  ? 1 : 0
+    kmidi_trackup = ((kstatus == 128.0 && kdata1 == 62.0) || (kstatus == 144.0 && kdata1 == 62.0 && kdata2 == 0))  ? 1 : 0
     ; this case covers true note off as well as 'note on with 0 velocity', which should be treated as note off according to midi standard.
     ;printks "kmidi_reset: %f, gkcurrent_track: %f\n",  .1, kmidi_reset, gkcurrent_track
 endif
@@ -155,7 +157,18 @@ scoreline "i100.4 0 3600  \"/4/fader1\"  \"/4/fader2\"   \"/4/toggle1\"  \"/4/to
     endif
 
 
-
+    if (kmidi_trackdown != 0.0 && gkcurrent_track > 0.0) then
+        gkcurrent_track = gkcurrent_track - 1
+        OSCsend kcycles, SDestIP, iOscPort, "/pager1", "f", gkcurrent_track
+        printks "setting global track to %f\n", .1, gkcurrent_track 
+        kmidi_trackdown = 0
+    endif
+    if (kmidi_trackup != 0.0 && gkcurrent_track < 3.0) then
+        gkcurrent_track = gkcurrent_track + 1
+        OSCsend kcycles, SDestIP, iOscPort, "/pager1", "f", gkcurrent_track
+        printks "setting global track to %f\n", .1, gkcurrent_track 
+        kmidi_trackup = 0
+    endif
 
 
     endin
