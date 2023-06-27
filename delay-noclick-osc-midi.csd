@@ -215,7 +215,7 @@ koutput_on_off init 0   ; output on/off
 aregenerated_signal init 1  ; regenerated signal - added to delay output * regen setting
 kregeneration_scalar init 1 ; regenerated signal scalar (see aregenerated_signal)
 
-kdelay_tap_point init 0 ; delay point in line - update w/osc 
+kdelay_tap_point init i(gkmaxdel)    ; delay point in line - update w/osc 
 ktap_tempo_comp_time init 0 ; used in tap tempo
 
 kosc_delaytime init 0
@@ -242,8 +242,8 @@ kmidi_momentary_in_progress init 0
 kcycles timeinstk
 
 if (kcycles < 2) then
-;    OSCsend kcycles, SDestIP, iOscPort, SdelayPointOscAddress, "f", (kdelay_tap_point / (gkmaxdel - gimin)) + gimin
-    OSCsend kcycles, SDestIP, iOscPort, SdelayPointOscAddress, "f", 1
+    OSCsend kcycles, SDestIP, iOscPort, SdelayPointOscAddress, "f", (kdelay_tap_point / (gkmaxdel - gimin)) + gimin
+    ;OSCsend kcycles, SDestIP, iOscPort, SdelayPointOscAddress, "f", 1
     OSCsend kcycles, SDestIP, iOscPort, SregenerationOscAddress, "f", kregeneration_scalar
     OSCsend kcycles, SDestIP, iOscPort, SinputToggleOscAddress, "f", kinput_on_off
     OSCsend kcycles, SDestIP, iOscPort, SoutputToggleOscAddress, "f", koutput_on_off
@@ -260,6 +260,8 @@ if(kstatus != 0) then
     kmidi_save = (gkcurrent_track == ktrack && kstatus == 144.0 && kdata1 == 49.0 && kdata2 != 0) ? 1 : 0
     kmidi_tap = (gkcurrent_track == ktrack && kstatus == 144.0 && kdata1 == 50.0 && kdata2 != 0) ? 1 : 0
     kmidi_output_toggled = (gkcurrent_track == ktrack && kstatus == 144.0 && kdata1 == 51.0 && kdata2 != 0) ? 1 : 0
+    kmidi_half_time = (gkcurrent_track == ktrack && kstatus == 144.0 && kdata1 == 51.0 && kdata2 != 0) ? 1 : 0
+    kmidi_double_time = (gkcurrent_track == ktrack && kstatus == 144.0 && kdata1 == 60.0 && kdata2 != 0) ? 1 : 0
     kmidi_recall = (gkcurrent_track == ktrack && kstatus == 144.0 && kdata1 == 52.0 && kdata2 != 0) ? 1 : 0
     kmidi_momentary_input_on = (gkcurrent_track == ktrack && kstatus == 144.0 && kdata1 == 53.0 && kdata2 != 0) ? 1 : 0
     kmidi_momentary_input_off = (gkcurrent_track == ktrack && ((kstatus == 128.0 && kdata1 == 53.0) || (kstatus == 144.0 && kdata1 == 53 && kdata2 == 0)))  ? 1 : 0
@@ -307,6 +309,7 @@ if (kmidi_momentary_input_on == 1 && kmidi_momentary_in_progress == 0) then
     ;printks "on", .001
 endif
 
+
 if (kmidi_momentary_input_off == 1) then
     kmidi_momentary_input_on = 0
     kmidi_momentary_input_off = 0
@@ -323,13 +326,13 @@ if (k4 == 1.0) then
     kmidi_output_toggled = 0
 endif
 
-if kmidi_output_toggled == 1 then
-    ;printks "midi_output_toggled - koutput_on_off is initially %f\n", .001, koutput_on_off 
-    koutput_on_off = (koutput_on_off == 0 ? 1 : 0)
-    OSCsend kcycles, SDestIP, 9000, SoutputToggleOscAddress, "f", koutput_on_off 
-    ;printks "midi_output_toggled - koutput_on_off is now %f\n", .001, koutput_on_off 
-    kmidi_output_toggled = 0
-endif
+;if kmidi_output_toggled == 1 then
+;    ;printks "midi_output_toggled - koutput_on_off is initially %f\n", .001, koutput_on_off 
+;    koutput_on_off = (koutput_on_off == 0 ? 1 : 0)
+;    OSCsend kcycles, SDestIP, 9000, SoutputToggleOscAddress, "f", koutput_on_off 
+;    ;printks "midi_output_toggled - koutput_on_off is now %f\n", .001, koutput_on_off 
+;    kmidi_output_toggled = 0
+;endif
 
 k5  OSClisten gihandle, SinputVolumeOscAddress, "f", kosc_involume
 if (k5 == 1.0) then
@@ -353,17 +356,18 @@ if ((k7 == 1.0 && kosc_push1val == 1.0) || kmidi_tap == 1) then
 tap_tempo_compare:
     ktemptime times
     krate1 = ktemptime - ktap_tempo_comp_time
-    printks "krate: %f\n", .1, krate1
+;    printks "krate: %f\n", .1, krate1
     if gkquantize_tempo == 1 then
         krate_quantized pycall1 "find_match", krate1
         krate1 = krate_quantized
         printks "quantized: %f \n", .1, krate1
     endif
-    ;printks "gidelsize: %f \n", .1, gidelsize
+;    printks "gidelsize: %f \n", .1, gidelsize
     OSCsend (krate1 / gidelsize), SDestIP, 9000, SdelayPointOscAddress, "f", (krate1 / gidelsize)
-    ;printks "fader set to : %f \n", .1, (krate1 / gidelsize)
+;    printks "fader set to : %f \n", .1, (krate1 / gidelsize)
     kdelay_tap_point = krate1
     ktap_tempo_comp_time = 0
+    krate1 = 0
 tap_tempo_done:
     kmidi_tap = 0  
 endif
@@ -385,6 +389,21 @@ if (k9 == 1.0 || kmidi_recall == 1) then
     ;printks "recall: kdelay_tap_point: %f \n", .001, kdelay_tap_point
     ;printks "recall: gksaved_delay_tap_point: %f \n", .001, gksaved_delay_tap_point
     kmidi_recall = 0
+endif
+
+if (kmidi_half_time == 1) then 
+;    printks "half 1st:  %f \n", .001, (kdelay_tap_point)
+    kdelay_tap_point = kdelay_tap_point * (((kdelay_tap_point * .5) > gimin) ? .5 : 1)
+;    printks "half : %f \n", .001, (kdelay_tap_point)
+    OSCsend (kdelay_tap_point  / gidelsize), SDestIP, 9000, SdelayPointOscAddress, "f", (kdelay_tap_point / gidelsize)
+    kmidi_half_time = 0 
+endif
+if (kmidi_double_time == 1) then 
+;    printks "double 1st : %f \n", .001, (kdelay_tap_point)
+    kdelay_tap_point = kdelay_tap_point * (((kdelay_tap_point * 2) <= gidelsize) ? 2 : 1)
+;    printks "double : %f \n", .001, (kdelay_tap_point)
+    OSCsend (kdelay_tap_point  / gidelsize), SDestIP, 9000, SdelayPointOscAddress, "f", (kdelay_tap_point / gidelsize)
+    kmidi_double_time = 0
 endif
 
 kinput_volume_scalar portk  kinput_on_off, .0005
