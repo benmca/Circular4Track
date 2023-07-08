@@ -36,6 +36,14 @@ gkquantize_tempo init 0
 
 gaAudioSignals[] init 4
 
+; these are just for 
+gkTapPoint[] init 4
+gkRegen[] init 4
+gkInVol[] init 4
+gkOutVol[] init 4
+gkInToggle[] init 4
+gkOutToggle[] init 4
+
 pyinit
 pyruni {{
 tempo_dict = {}
@@ -120,6 +128,8 @@ if(kstatus != 0) then
     kmidi_reset = ((kstatus == 128.0 && kdata1 == 63.0) || (kstatus == 144.0 && kdata1 == 63.0 && kdata2 == 0))  ? 1 : 0
     kmidi_trackdown = ((kstatus == 128.0 && kdata1 == 61.0) || (kstatus == 144.0 && kdata1 == 61.0 && kdata2 == 0))  ? 1 : 0
     kmidi_trackup = ((kstatus == 128.0 && kdata1 == 62.0) || (kstatus == 144.0 && kdata1 == 62.0 && kdata2 == 0))  ? 1 : 0
+    kmidi_trackdown_with_reset = ((kstatus == 128.0 && kdata1 == 72.0) || (kstatus == 144.0 && kdata1 == 72.0 && kdata2 == 0))  ? 1 : 0
+    kmidi_trackup_with_reset = ((kstatus == 128.0 && kdata1 == 73.0) || (kstatus == 144.0 && kdata1 == 73.0 && kdata2 == 0))  ? 1 : 0
     ; this case covers true note off as well as 'note on with 0 velocity', which should be treated as note off according to midi standard.
     ;printks "kmidi_reset: %f, gkcurrent_track: %f\n",  .1, kmidi_reset, gkcurrent_track
 endif
@@ -127,47 +137,107 @@ endif
     k11  OSClisten gihandle, "/1/reset","f", kreset_1
     if (k11 == 1.0 || (kmidi_reset != 0 && gkcurrent_track == 0.0)) then 
         turnoff2 100.1, 4, 0
-        scoreline "i100.1 0 3600  \"/1/fader1\"  \"/1/fader2\"   \"/1/toggle1\"  \"/1/toggle2\"   \"/1/fader3\"  \"/1/fader4\"  \"/1/push1\" \"/1/push2\" \"/1/push3\"  9000 0 0 \"/pager1\"", ktrig
-        ;printks "reset chan 1\n", .1
+        scoreline "i100.1 0 3600  \"/1/fader1\"  \"/1/fader2\"   \"/1/toggle1\"  \"/1/toggle2\"   \"/1/fader3\"  \"/1/fader4\"  \"/1/push1\" \"/1/push2\" \"/1/push3\"  9000 0 0 \"/pager1\" 1", ktrig
+        printks "reset chan 1\n", .1
         kmidi_reset = 0
+        gkcurrent_track = 0 
     endif
 
     k12  OSClisten gihandle, "/2/reset","f", kreset_2
     if (k12 == 1.0 || (kmidi_reset != 0 && gkcurrent_track == 1.0)) then 
         turnoff2 100.2, 4, 0
-scoreline "i100.2 0 3600  \"/2/fader1\"  \"/2/fader2\"   \"/2/toggle1\"  \"/2/toggle2\"   \"/2/fader3\"  \"/2/fader4\"  \"/2/push1\" \"/2/push2\" \"/2/push3\"  9000 0 0 \"/pager1\"", ktrig
-        ;printks "reset chan 2\n", .1
+        scoreline "i100.2 0 3600  \"/2/fader1\"  \"/2/fader2\"   \"/2/toggle1\"  \"/2/toggle2\"   \"/2/fader3\"  \"/2/fader4\"  \"/2/push1\" \"/2/push2\" \"/2/push3\"  9000 0 1 \"/pager1\" 1", ktrig
+        printks "reset chan 2\n", .1
         kmidi_reset = 0
+        gkcurrent_track = 1
     endif
 
     k13  OSClisten gihandle, "/3/reset","f", kreset_3
     if (k13 == 1.0  || (kmidi_reset != 0 && gkcurrent_track == 2.0)) then 
         turnoff2 100.3, 4, 0
-scoreline "i100.3 0 3600  \"/3/fader1\"  \"/3/fader2\"   \"/3/toggle1\"  \"/3/toggle2\"   \"/3/fader3\"  \"/3/fader4\"  \"/3/push1\" \"/3/push2\" \"/3/push3\"  9000 0 0 \"/pager1\"", ktrig
-        ;printks "reset chan 3\n", .1
+        scoreline "i100.3 0 3600  \"/3/fader1\"  \"/3/fader2\"   \"/3/toggle1\"  \"/3/toggle2\"   \"/3/fader3\"  \"/3/fader4\"  \"/3/push1\" \"/3/push2\" \"/3/push3\"  9000 0 2 \"/pager1\" 1", ktrig
+        printks "reset chan 3\n", .1
         kmidi_reset = 0
+        gkcurrent_track = 2
     endif
 
     k14  OSClisten gihandle, "/4/reset","f", kreset_4
     if (k14 == 1.0 || (kmidi_reset != 0 && gkcurrent_track == 3.0)) then 
         turnoff2 100.4, 4, 0
-scoreline "i100.4 0 3600  \"/4/fader1\"  \"/4/fader2\"   \"/4/toggle1\"  \"/4/toggle2\"   \"/4/fader3\"  \"/4/fader4\"  \"/4/push1\" \"/4/push2\" \"/4/push3\"  9000 0 0 \"/pager1\"", ktrig
-        ;printks "reset chan 4\n", .1
+        scoreline "i100.4 0 3600  \"/4/fader1\"  \"/4/fader2\"   \"/4/toggle1\"  \"/4/toggle2\"   \"/4/fader3\"  \"/4/fader4\"  \"/4/push1\" \"/4/push2\" \"/4/push3\"  9000 0 3 \"/pager1\" 1", ktrig
+        printks "reset chan 4\n", .1
         kmidi_reset = 0
+        gkcurrent_track = 3
     endif
 
 
     if (kmidi_trackdown != 0.0 && gkcurrent_track > 0.0) then
+        kprev_track = gkcurrent_track
         gkcurrent_track = gkcurrent_track - 1
+        kone_based_track = gkcurrent_track+1
         OSCsend kcycles, SDestIP, iOscPort, "/pager1", "f", gkcurrent_track
-        printks "setting global track to %f\n", .1, gkcurrent_track 
+
         kmidi_trackdown = 0
     endif
+    
     if (kmidi_trackup != 0.0 && gkcurrent_track < 3.0) then
+        kprev_track = gkcurrent_track
         gkcurrent_track = gkcurrent_track + 1
+        kone_based_track = gkcurrent_track+1
         OSCsend kcycles, SDestIP, iOscPort, "/pager1", "f", gkcurrent_track
-        printks "setting global track to %f\n", .1, gkcurrent_track 
+
         kmidi_trackup = 0
+    endif
+
+    if (kmidi_trackdown_with_reset != 0.0 && gkcurrent_track > 0.0) then    
+        kprev_track = gkcurrent_track
+        gkcurrent_track = gkcurrent_track - 1
+        kone_based_track = gkcurrent_track+1
+        OSCsend kcycles, SDestIP, iOscPort, "/pager1", "f", gkcurrent_track
+
+        Sscoreline sprintfk "i100.%d 0 3600  \"/%d/fader1\"  \"/%d/fader2\"   \"/%d/toggle1\"  \"/%d/toggle2\"   \"/%d/fader3\"  \"/%d/fader4\"  \"/%d/push1\" \"/%d/push2\" \"/%d/push3\"  9000 0 %d \"/pager1\" 1 1 %d", kone_based_track, kone_based_track, kone_based_track, kone_based_track, kone_based_track, kone_based_track, kone_based_track, kone_based_track, kone_based_track, kone_based_track, gkcurrent_track, kprev_track
+        Snum sprintfk "100.%d", kone_based_track
+        knum strtodk Snum
+
+
+        turnoff2 knum, 4, 0
+        scoreline Sscoreline, ktrig
+
+        ; turn input off from prev track
+        ; this is also the one based track...
+        ;SinputToggleOscAddress sprintfk "/%d/toggle1", kprev_track+1
+        ;OSCsend kcycles, SDestIP, iOscPort, SinputToggleOscAddress, "f", 0
+        ;printks "sent input off to %s\n", .1, SinputToggleOscAddress
+
+
+        ;printks "%s, Snum: %s, knum: %f\n", .1, Sscoreline, Snum, knum
+;        printks "setting global track to %f\n", .1, gkcurrent_track 
+        kmidi_trackdown_with_reset = 0
+    endif
+    
+    if (kmidi_trackup_with_reset != 0.0 && gkcurrent_track < 3.0) then
+        kprev_track = gkcurrent_track
+        gkcurrent_track = gkcurrent_track + 1
+        kone_based_track = gkcurrent_track+1
+        OSCsend kcycles, SDestIP, iOscPort, "/pager1", "f", gkcurrent_track
+
+        Sscoreline sprintfk "i100.%d 0 3600  \"/%d/fader1\"  \"/%d/fader2\"   \"/%d/toggle1\"  \"/%d/toggle2\"   \"/%d/fader3\"  \"/%d/fader4\"  \"/%d/push1\" \"/%d/push2\" \"/%d/push3\"  9000 0 %d \"/pager1\" 1 1 %d", kone_based_track, kone_based_track, kone_based_track, kone_based_track, kone_based_track, kone_based_track, kone_based_track, kone_based_track, kone_based_track, kone_based_track, gkcurrent_track, kprev_track
+
+        Snum sprintfk "100.%d", kone_based_track
+        knum strtodk Snum
+
+        turnoff2 knum, 4, 0
+        scoreline Sscoreline, ktrig
+
+        ; turn input off from prev track
+        ; this is also the one based track...
+        ;SinputToggleOscAddress sprintfk "/%d/toggle1", kprev_track+1
+        ;OSCsend kcycles, SDestIP, iOscPort, SinputToggleOscAddress, "f", 0
+        ;printks "sent input off to %s\n", .1, SinputToggleOscAddress
+
+        ;printks "%s, Snum: %s, knum: %f\n", .1, Sscoreline, Snum, knum
+;        printks "setting global track to %f\n", .1, gkcurrent_track 
+        kmidi_trackup_with_reset = 0
     endif
 
 
@@ -191,6 +261,9 @@ SrecallOscAddress = p12
 iOscPort = p13
 ktrack init p15
 StrackSelectedOscAddress = p16
+kreset_channel = p17
+kapply_setting_from_track_flag = p18
+kapply_setting_from_track = p19
 
 ainputsig = 0
 
@@ -241,7 +314,34 @@ kmidi_momentary_in_progress init 0
 
 kcycles timeinstk
 
+
 if (kcycles < 2) then
+    if (kreset_channel == 1) then
+        if (kapply_setting_from_track_flag == 1) then
+            gkTapPoint[ktrack] = gkTapPoint[kapply_setting_from_track]
+            gkRegen[ktrack] = gkRegen[kapply_setting_from_track]
+            gkInToggle[ktrack] = gkInToggle[kapply_setting_from_track] 
+            gkOutToggle[ktrack] = gkOutToggle[kapply_setting_from_track] 
+            gkInVol[ktrack] = gkInVol[kapply_setting_from_track] 
+            gkOutVol[ktrack] = gkOutVol[kapply_setting_from_track] 
+        endif    
+        printks "resetting to globals\n", .1
+        kdelay_tap_point = gkTapPoint[ktrack]
+        kregeneration_scalar = gkRegen[ktrack] 
+        kinput_on_off = gkInToggle[ktrack]
+        koutput_on_off = gkOutToggle[ktrack]
+        kinput_volume = gkInVol[ktrack]
+        koutput_volume = gkOutVol[ktrack]
+    else
+        printks "resetting globalsi to defaults\n", .1
+        gkTapPoint[ktrack] = kdelay_tap_point
+        gkRegen[ktrack] = kregeneration_scalar 
+        gkInToggle[ktrack] = kinput_on_off 
+        gkOutToggle[ktrack] = koutput_on_off 
+        gkInVol[ktrack] = kinput_volume 
+        gkOutVol[ktrack] = koutput_volume 
+        
+    endif
     OSCsend kcycles, SDestIP, iOscPort, SdelayPointOscAddress, "f", (kdelay_tap_point / (gkmaxdel - gimin)) + gimin
     ;OSCsend kcycles, SDestIP, iOscPort, SdelayPointOscAddress, "f", 1
     OSCsend kcycles, SDestIP, iOscPort, SregenerationOscAddress, "f", kregeneration_scalar
@@ -249,13 +349,12 @@ if (kcycles < 2) then
     OSCsend kcycles, SDestIP, iOscPort, SoutputToggleOscAddress, "f", koutput_on_off
     OSCsend kcycles, SDestIP, iOscPort, SinputVolumeOscAddress, "f", kinput_volume
     OSCsend kcycles, SDestIP, iOscPort, SoutputVolumeOscAddress, "f", koutput_volume
-    ;printks "\ntrack %f started - kcycles: %f\n", .001, ktrack, kcycles
+    printks "\ntrack %f started - kcycles: %f\n", .001, ktrack, kcycles
 endif
-
 
 kstatus, kchan, kdata1, kdata2  midiin
 if(kstatus != 0) then
-    ;printks "kstatus= %f, kchan = %f, kdata1 = %f, kdata2 = %f\n", 0, kstatus, kchan, kdata1,kdata2
+    printks "kstatus= %f, kchan = %f, kdata1 = %f, kdata2 = %f, ch %f, gkcurrent_track: %f, ktrack: %f\n", 0, kstatus, kchan, kdata1,kdata2, p1, gkcurrent_track,  ktrack
     kmidi_input_toggled = (gkcurrent_track == ktrack && kstatus == 144.0 && kdata1 == 48.0 && kdata2 != 0) ? 1 : 0
     kmidi_save = (gkcurrent_track == ktrack && kstatus == 144.0 && kdata1 == 49.0 && kdata2 != 0) ? 1 : 0
     kmidi_tap = (gkcurrent_track == ktrack && kstatus == 144.0 && kdata1 == 50.0 && kdata2 != 0) ? 1 : 0
@@ -271,7 +370,7 @@ endif
 k0 OSClisten gihandle, StrackSelectedOscAddress, "f", kosc_track_selected
 if (k0 == 1.0) then
     gkcurrent_track = kosc_track_selected
-    ;printks "setting global track to %f\n", .0001, gkcurrent_track 
+    printks "setting global track to %f\n", .0001, gkcurrent_track
 endif
 
 k1  OSClisten gihandle, SdelayPointOscAddress, "f", kosc_delaytime
@@ -289,7 +388,7 @@ endif
 
 k3  OSClisten gihandle, SinputToggleOscAddress, "f", kosc_input_on
 if (k3 == 1.0) then
-    ;printks "kosc_input_on: %f \n", .001, kosc_input_on
+    printks "kosc_input_on: %f \n", .001, kosc_input_on
     kinput_on_off = kosc_input_on
 endif 
 
@@ -364,7 +463,7 @@ tap_tempo_compare:
     endif
 ;    printks "gidelsize: %f \n", .1, gidelsize
     OSCsend (krate1 / gidelsize), SDestIP, 9000, SdelayPointOscAddress, "f", (krate1 / gidelsize)
-;    printks "fader set to : %f \n", .1, (krate1 / gidelsize)
+    printks "fader set to : %f on ch: %f \n", .1, (krate1 / gidelsize), p1
     kdelay_tap_point = krate1
     ktap_tempo_comp_time = 0
     krate1 = 0
@@ -463,6 +562,15 @@ aregenerated_signal = aout
 
 out aout*koutput_volume*koutput_volume_scalar
 gaAudioSignals[p15] = aout*koutput_volume_scalar
+gkTapPoint[ktrack] = kdelay_tap_point 
+gkRegen[ktrack] = kregeneration_scalar
+gkInVol[ktrack] = kinput_volume
+gkOutVol[ktrack] = koutput_volume
+gkInToggle[ktrack] = kinput_on_off
+gkOutToggle[ktrack] = koutput_on_off
+
+; printks "gkTapPoint track %f, %f, kdelay_tap_point: %f \n", .1, ktrack, gkTapPoint[ktrack], kdelay_tap_point 
+
 
 endin
 
