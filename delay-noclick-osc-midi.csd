@@ -214,7 +214,7 @@ endif
 
 
         ;printks "%s, Snum: %s, knum: %f\n", .1, Sscoreline, Snum, knum
-;        printks "setting global track to %f\n", .1, gkcurrent_track 
+        printks "1st: setting global track to %f\n", .1, gkcurrent_track 
         kmidi_trackdown_with_reset = 0
     endif
     
@@ -239,7 +239,7 @@ endif
         ;printks "sent input off to %s\n", .1, SinputToggleOscAddress
 
         ;printks "%s, Snum: %s, knum: %f\n", .1, Sscoreline, Snum, knum
-;        printks "setting global track to %f\n", .1, gkcurrent_track 
+        printks "2nd: setting global track to %f\n", .1, gkcurrent_track 
         kmidi_trackup_with_reset = 0
     endif
 
@@ -336,7 +336,7 @@ if (kcycles < 2) then
         kinput_volume = gkInVol[ktrack]
         koutput_volume = gkOutVol[ktrack]
     else
-        printks "resetting globalsi to defaults\n", .1
+        printks "resetting globals to defaults\n", .1
         gkTapPoint[ktrack] = kdelay_tap_point
         gkRegen[ktrack] = kregeneration_scalar 
         gkInToggle[ktrack] = kinput_on_off 
@@ -352,6 +352,7 @@ if (kcycles < 2) then
     OSCsend kcycles, SDestIP, iOscPort, SoutputToggleOscAddress, "f", koutput_on_off
     OSCsend kcycles, SDestIP, iOscPort, SinputVolumeOscAddress, "f", kinput_volume
     OSCsend kcycles, SDestIP, iOscPort, SoutputVolumeOscAddress, "f", koutput_volume
+    OSCsend kcycles, SDestIP, iOscPort, StrackSelectedOscAddress, "f", 0
     printks "\ntrack %f started - kcycles: %f\n", .001, ktrack, kcycles
 endif
 
@@ -373,7 +374,7 @@ endif
 k0 OSClisten gihandle, StrackSelectedOscAddress, "f", kosc_track_selected
 if (k0 == 1.0) then
     gkcurrent_track = kosc_track_selected
-    printks "setting global track to %f\n", .0001, gkcurrent_track
+    printks "setting global track to %f\n", .01, gkcurrent_track
 endif
 
 k1  OSClisten gihandle, SdelayPointOscAddress, "f", kosc_delaytime
