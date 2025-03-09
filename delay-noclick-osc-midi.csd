@@ -23,12 +23,15 @@ nchnls=1
 massign 0,0
 pgmassign       0, 0
 ;minimal global vars - from old UI
-#define totalDelayLineTime  #32#
+#define totalDelayLineTime  #8#
 #define IOBaseChannel   #1#
 gkmaxdel    init $totalDelayLineTime
 gidelsize init i(gkmaxdel)
 gimin   init    .01
-gicrossfadetime init .05
+;gicrossfadetime init .025
+
+gicrossfadetime init .025
+gicrossfade_window init .0001
 gihandle OSCinit 8000
 gkcurrent_track init 0
 gksaved_delay_tap_point init 0
@@ -126,8 +129,8 @@ kstatus, kchan, kdata1, kdata2  midiin
 if(kstatus != 0) then
     ;printks "kstatus= %f, kchan = %f, kdata1 = %f, kdata2 = %f\n", 0, kstatus, kchan, kdata1,kdata2
     kmidi_reset = ((kstatus == 128.0 && kdata1 == 63.0) || (kstatus == 144.0 && kdata1 == 63.0 && kdata2 == 0))  ? 1 : 0
-    kmidi_trackdown = ((kstatus == 128.0 && kdata1 == 61.0) || (kstatus == 144.0 && kdata1 == 61.0 && kdata2 == 0))  ? 1 : 0
-    kmidi_trackup = ((kstatus == 128.0 && kdata1 == 62.0) || (kstatus == 144.0 && kdata1 == 62.0 && kdata2 == 0))  ? 1 : 0
+    kmidi_trackdown = ((kstatus == 128.0 && kdata1 == 70.0) || (kstatus == 144.0 && kdata1 == 70.0 && kdata2 == 0))  ? 1 : 0
+    kmidi_trackup = ((kstatus == 128.0 && kdata1 == 71.0) || (kstatus == 144.0 && kdata1 == 71.0 && kdata2 == 0))  ? 1 : 0
     kmidi_trackdown_with_reset = ((kstatus == 128.0 && kdata1 == 72.0) || (kstatus == 144.0 && kdata1 == 72.0 && kdata2 == 0))  ? 1 : 0
     kmidi_trackup_with_reset = ((kstatus == 128.0 && kdata1 == 73.0) || (kstatus == 144.0 && kdata1 == 73.0 && kdata2 == 0))  ? 1 : 0
     ; this case covers true note off as well as 'note on with 0 velocity', which should be treated as note off according to midi standard.
@@ -359,11 +362,11 @@ if(kstatus != 0) then
     kmidi_save = (gkcurrent_track == ktrack && kstatus == 144.0 && kdata1 == 49.0 && kdata2 != 0) ? 1 : 0
     kmidi_tap = (gkcurrent_track == ktrack && kstatus == 144.0 && kdata1 == 50.0 && kdata2 != 0) ? 1 : 0
     kmidi_output_toggled = (gkcurrent_track == ktrack && kstatus == 144.0 && kdata1 == 51.0 && kdata2 != 0) ? 1 : 0
-    kmidi_half_time = (gkcurrent_track == ktrack && kstatus == 144.0 && kdata1 == 51.0 && kdata2 != 0) ? 1 : 0
+    kmidi_half_time = (gkcurrent_track == ktrack && kstatus == 144.0 && kdata1 == 61.0 && kdata2 != 0) ? 1 : 0
     kmidi_double_time = (gkcurrent_track == ktrack && kstatus == 144.0 && kdata1 == 60.0 && kdata2 != 0) ? 1 : 0
     kmidi_recall = (gkcurrent_track == ktrack && kstatus == 144.0 && kdata1 == 52.0 && kdata2 != 0) ? 1 : 0
     kmidi_momentary_input_on = (gkcurrent_track == ktrack && kstatus == 144.0 && kdata1 == 53.0 && kdata2 != 0) ? 1 : 0
-    kmidi_momentary_input_off = (gkcurrent_track == ktrack && ((kstatus == 128.0 && kdata1 == 53.0) || (kstatus == 144.0 && kdata1 == 53 && kdata2 == 0)))  ? 1 : 0
+    kmidi_momentary_input_off = (gkcurrent_track == ktrack && ((kstatus == 128.0 && kdata1 == 53.0) || (kstatus == 144.0 && kdata1 == 53.0 && kdata2 == 0)))  ? 1 : 0
     ; this case covers true note off as well as 'note on with 0 velocity', which should be treated as note off according to midi standard.
 endif
 
@@ -425,13 +428,13 @@ if (k4 == 1.0) then
     kmidi_output_toggled = 0
 endif
 
-;if kmidi_output_toggled == 1 then
-;    ;printks "midi_output_toggled - koutput_on_off is initially %f\n", .001, koutput_on_off 
-;    koutput_on_off = (koutput_on_off == 0 ? 1 : 0)
-;    OSCsend kcycles, SDestIP, 9000, SoutputToggleOscAddress, "f", koutput_on_off 
-;    ;printks "midi_output_toggled - koutput_on_off is now %f\n", .001, koutput_on_off 
-;    kmidi_output_toggled = 0
-;endif
+if kmidi_output_toggled == 1 then
+    printks "midi_output_toggled - koutput_on_off is initially %f\n", .001, koutput_on_off 
+    koutput_on_off = (koutput_on_off == 0 ? 1 : 0)
+    OSCsend kcycles, SDestIP, 9000, SoutputToggleOscAddress, "f", koutput_on_off 
+    ;printks "midi_output_toggled - koutput_on_off is now %f\n", .001, koutput_on_off 
+    kmidi_output_toggled = 0
+endif
 
 k5  OSClisten gihandle, SinputVolumeOscAddress, "f", kosc_involume
 if (k5 == 1.0) then
@@ -535,7 +538,7 @@ if  ((kcrossfade_before != kdelay_tap_point && kactive == 0.0) || kactive > 0) t
     elseif (kcrossfade_in_progress == 1 && kactive > 0) then
 ;       printks "crossfading, keeping state....\n", .01
         kbegin = kcrossfade_in_progress_time
-        kend = kcrossfade_in_progress_time + gicrossfadetime - .01
+        kend = kcrossfade_in_progress_time + gicrossfadetime - gicrossfade_window
         kcf = (kactive_time-kbegin) / (kend-kbegin)
         if kcf > 1.0 then
             kcf = 1.0
