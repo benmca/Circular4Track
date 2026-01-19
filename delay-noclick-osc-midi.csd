@@ -128,13 +128,13 @@ endif
 kstatus, kchan, kdata1, kdata2  midiin
 if(kstatus != 0) then
     ;printks "kstatus= %f, kchan = %f, kdata1 = %f, kdata2 = %f\n", 0, kstatus, kchan, kdata1,kdata2
-    kmidi_reset = ((kstatus == 128.0 && kdata1 == 63.0) || (kstatus == 144.0 && kdata1 == 63.0 && kdata2 == 0))  ? 1 : 0
+    kmidi_reset = ((kstatus == 128.0 && kdata1 == 69.0) || (kstatus == 144.0 && kdata1 == 69.0 && kdata2 == 0))  ? 1 : 0
     kmidi_trackdown = ((kstatus == 128.0 && kdata1 == 70.0) || (kstatus == 144.0 && kdata1 == 70.0 && kdata2 == 0))  ? 1 : 0
     kmidi_trackup = ((kstatus == 128.0 && kdata1 == 71.0) || (kstatus == 144.0 && kdata1 == 71.0 && kdata2 == 0))  ? 1 : 0
     kmidi_trackdown_with_reset = ((kstatus == 128.0 && kdata1 == 72.0) || (kstatus == 144.0 && kdata1 == 72.0 && kdata2 == 0))  ? 1 : 0
     kmidi_trackup_with_reset = ((kstatus == 128.0 && kdata1 == 73.0) || (kstatus == 144.0 && kdata1 == 73.0 && kdata2 == 0))  ? 1 : 0
     ; this case covers true note off as well as 'note on with 0 velocity', which should be treated as note off according to midi standard.
-    ;printks "kmidi_reset: %f, gkcurrent_track: %f\n",  .1, kmidi_reset, gkcurrent_track
+    printks "kmidi_reset: %f, gkcurrent_track: %f\n",  .1, kmidi_reset, gkcurrent_track
 endif
 
     k11  OSClisten gihandle, "/1/reset","f", kreset_1
@@ -149,7 +149,7 @@ endif
     k12  OSClisten gihandle, "/2/reset","f", kreset_2
     if (k12 == 1.0 || (kmidi_reset != 0 && gkcurrent_track == 1.0)) then 
         turnoff2 100.2, 4, 0
-        scoreline "i100.2 0 3600  \"/2/fader1\"  \"/2/fader2\"   \"/2/toggle1\"  \"/2/toggle2\"   \"/2/fader3\"  \"/2/fader4\"  \"/2/push1\" \"/2/push2\" \"/2/push3\"  9000 0 1 \"/pager1\" 1", ktrig
+        scoreline "i100.2 0 3600  \"/2/fader1\"  \"/2/fader2\"   \"/2/toggle1\"  \"/2/toggle2\"   \"/2/fader3\"  \"/2/fader4\"  \"/2/push1\" \"/2/push2\" \"/2/push3\"  9000 0 1 \"/pager1\" 2", ktrig
         printks "reset chan 2\n", .1
         kmidi_reset = 0
         gkcurrent_track = 1
@@ -158,7 +158,7 @@ endif
     k13  OSClisten gihandle, "/3/reset","f", kreset_3
     if (k13 == 1.0  || (kmidi_reset != 0 && gkcurrent_track == 2.0)) then 
         turnoff2 100.3, 4, 0
-        scoreline "i100.3 0 3600  \"/3/fader1\"  \"/3/fader2\"   \"/3/toggle1\"  \"/3/toggle2\"   \"/3/fader3\"  \"/3/fader4\"  \"/3/push1\" \"/3/push2\" \"/3/push3\"  9000 0 2 \"/pager1\" 1", ktrig
+        scoreline "i100.3 0 3600  \"/3/fader1\"  \"/3/fader2\"   \"/3/toggle1\"  \"/3/toggle2\"   \"/3/fader3\"  \"/3/fader4\"  \"/3/push1\" \"/3/push2\" \"/3/push3\"  9000 0 2 \"/pager1\" 3", ktrig
         printks "reset chan 3\n", .1
         kmidi_reset = 0
         gkcurrent_track = 2
@@ -167,7 +167,7 @@ endif
     k14  OSClisten gihandle, "/4/reset","f", kreset_4
     if (k14 == 1.0 || (kmidi_reset != 0 && gkcurrent_track == 3.0)) then 
         turnoff2 100.4, 4, 0
-        scoreline "i100.4 0 3600  \"/4/fader1\"  \"/4/fader2\"   \"/4/toggle1\"  \"/4/toggle2\"   \"/4/fader3\"  \"/4/fader4\"  \"/4/push1\" \"/4/push2\" \"/4/push3\"  9000 0 3 \"/pager1\" 1", ktrig
+        scoreline "i100.4 0 3600  \"/4/fader1\"  \"/4/fader2\"   \"/4/toggle1\"  \"/4/toggle2\"   \"/4/fader3\"  \"/4/fader4\"  \"/4/push1\" \"/4/push2\" \"/4/push3\"  9000 0 3 \"/pager1\" 4", ktrig
         printks "reset chan 4\n", .1
         kmidi_reset = 0
         gkcurrent_track = 3
@@ -319,7 +319,7 @@ kcycles timeinstk
 
 
 if (kcycles < 2) then
-    if (kreset_channel == 1) then
+    if (kreset_channel > 0) then
         if (kapply_setting_from_track_flag == 1) then
             gkTapPoint[ktrack] = gkTapPoint[kapply_setting_from_track]
             gkRegen[ktrack] = gkRegen[kapply_setting_from_track]
@@ -343,7 +343,6 @@ if (kcycles < 2) then
         gkOutToggle[ktrack] = koutput_on_off 
         gkInVol[ktrack] = kinput_volume 
         gkOutVol[ktrack] = koutput_volume 
-        
     endif
     OSCsend kcycles, SDestIP, iOscPort, SdelayPointOscAddress, "f", (kdelay_tap_point / (gkmaxdel - gimin)) + gimin
     ;OSCsend kcycles, SDestIP, iOscPort, SdelayPointOscAddress, "f", 1
@@ -352,7 +351,7 @@ if (kcycles < 2) then
     OSCsend kcycles, SDestIP, iOscPort, SoutputToggleOscAddress, "f", koutput_on_off
     OSCsend kcycles, SDestIP, iOscPort, SinputVolumeOscAddress, "f", kinput_volume
     OSCsend kcycles, SDestIP, iOscPort, SoutputVolumeOscAddress, "f", koutput_volume
-    OSCsend kcycles, SDestIP, iOscPort, StrackSelectedOscAddress, "f", 0
+    OSCsend kcycles, SDestIP, iOscPort, StrackSelectedOscAddress, "f", kreset_channel -1
     printks "\ntrack %f started - kcycles: %f\n", .001, ktrack, kcycles
 endif
 
