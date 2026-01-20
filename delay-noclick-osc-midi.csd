@@ -134,13 +134,13 @@ if(kstatus != 0) then
     kmidi_trackdown_with_reset = ((kstatus == 128.0 && kdata1 == 72.0) || (kstatus == 144.0 && kdata1 == 72.0 && kdata2 == 0))  ? 1 : 0
     kmidi_trackup_with_reset = ((kstatus == 128.0 && kdata1 == 73.0) || (kstatus == 144.0 && kdata1 == 73.0 && kdata2 == 0))  ? 1 : 0
     ; this case covers true note off as well as 'note on with 0 velocity', which should be treated as note off according to midi standard.
-    printks "kmidi_reset: %f, gkcurrent_track: %f\n",  .1, kmidi_reset, gkcurrent_track
+    ; printks "kmidi_reset: %f, gkcurrent_track: %f\n",  .1, kmidi_reset, gkcurrent_track
 endif
 
     k11  OSClisten gihandle, "/1/reset","f", kreset_1
     if (k11 == 1.0 || (kmidi_reset != 0 && gkcurrent_track == 0.0)) then 
         turnoff2 100.1, 4, 0
-        scoreline "i100.1 0 3600  \"/1/fader1\"  \"/1/fader2\"   \"/1/toggle1\"  \"/1/toggle2\"   \"/1/fader3\"  \"/1/fader4\"  \"/1/push1\" \"/1/push2\" \"/1/push3\"  9000 0 0 \"/pager1\" 1", ktrig
+        scoreline "i100.1 0 3600  \"/1/fader1\"  \"/1/fader2\"   \"/1/toggle1\"  \"/1/toggle2\"   \"/1/fader3\"  \"/1/fader4\"  \"/1/push1\" \"/1/push2\" \"/1/push3\" \"/1/itap\" 9000 0 0 \"/pager1\" 1", ktrig
         printks "reset chan 1\n", .1
         kmidi_reset = 0
         gkcurrent_track = 0 
@@ -149,7 +149,7 @@ endif
     k12  OSClisten gihandle, "/2/reset","f", kreset_2
     if (k12 == 1.0 || (kmidi_reset != 0 && gkcurrent_track == 1.0)) then 
         turnoff2 100.2, 4, 0
-        scoreline "i100.2 0 3600  \"/2/fader1\"  \"/2/fader2\"   \"/2/toggle1\"  \"/2/toggle2\"   \"/2/fader3\"  \"/2/fader4\"  \"/2/push1\" \"/2/push2\" \"/2/push3\"  9000 0 1 \"/pager1\" 2", ktrig
+        scoreline "i100.2 0 3600  \"/2/fader1\"  \"/2/fader2\"   \"/2/toggle1\"  \"/2/toggle2\"   \"/2/fader3\"  \"/2/fader4\"  \"/2/push1\" \"/2/push2\" \"/2/push3\" \"/2/itap\" 9000 0 1 \"/pager1\" 2", ktrig
         printks "reset chan 2\n", .1
         kmidi_reset = 0
         gkcurrent_track = 1
@@ -158,7 +158,7 @@ endif
     k13  OSClisten gihandle, "/3/reset","f", kreset_3
     if (k13 == 1.0  || (kmidi_reset != 0 && gkcurrent_track == 2.0)) then 
         turnoff2 100.3, 4, 0
-        scoreline "i100.3 0 3600  \"/3/fader1\"  \"/3/fader2\"   \"/3/toggle1\"  \"/3/toggle2\"   \"/3/fader3\"  \"/3/fader4\"  \"/3/push1\" \"/3/push2\" \"/3/push3\"  9000 0 2 \"/pager1\" 3", ktrig
+        scoreline "i100.3 0 3600  \"/3/fader1\"  \"/3/fader2\"   \"/3/toggle1\"  \"/3/toggle2\"   \"/3/fader3\"  \"/3/fader4\"  \"/3/push1\" \"/3/push2\" \"/3/push3\" \"/3/itap\" 9000 0 2 \"/pager1\" 3", ktrig
         printks "reset chan 3\n", .1
         kmidi_reset = 0
         gkcurrent_track = 2
@@ -167,7 +167,7 @@ endif
     k14  OSClisten gihandle, "/4/reset","f", kreset_4
     if (k14 == 1.0 || (kmidi_reset != 0 && gkcurrent_track == 3.0)) then 
         turnoff2 100.4, 4, 0
-        scoreline "i100.4 0 3600  \"/4/fader1\"  \"/4/fader2\"   \"/4/toggle1\"  \"/4/toggle2\"   \"/4/fader3\"  \"/4/fader4\"  \"/4/push1\" \"/4/push2\" \"/4/push3\"  9000 0 3 \"/pager1\" 4", ktrig
+        scoreline "i100.4 0 3600  \"/4/fader1\"  \"/4/fader2\"   \"/4/toggle1\"  \"/4/toggle2\"   \"/4/fader3\"  \"/4/fader4\"  \"/4/push1\" \"/4/push2\" \"/4/push3\" \"/4/itap\" 9000 0 3 \"/pager1\" 4", ktrig
         printks "reset chan 4\n", .1
         kmidi_reset = 0
         gkcurrent_track = 3
@@ -261,12 +261,15 @@ SoutputVolumeOscAddress = p9
 StapTempoOscAddress = p10
 SsaveOscAddress = p11
 SrecallOscAddress = p12
-iOscPort = p13
-ktrack init p15
-StrackSelectedOscAddress = p16
-kreset_channel = p17
-kapply_setting_from_track_flag = p18
-kapply_setting_from_track = p19
+StapInputOscAddress = p13
+
+
+iOscPort = p14
+ktrack init p16
+StrackSelectedOscAddress = p17
+kreset_channel = p18
+kapply_setting_from_track_flag = p19
+kapply_setting_from_track = p20
 
 ainputsig = 0
 
@@ -285,7 +288,7 @@ kinput_volume_mod init 1
 kinput_volume init .9    ; input volume
 koutput_volume init 1   ; output volume
 
-kinput_on_off init p14  ; input on/off
+kinput_on_off init p15  ; input on/off
 koutput_on_off init 0   ; output on/off
 
 aregenerated_signal init 1  ; regenerated signal - added to delay output * regen setting
@@ -304,7 +307,8 @@ kosc_push1val init 0
 kosc_push2val init 0
 kosc_push3val init 0
 kosc_track_selected init 0
-
+kosc_momentary_input_on init 0
+kosc_momentary_in_progress init 0
 
 kmidi_recvd init 0
 kmidi_input_toggled init 0
@@ -403,8 +407,23 @@ if kmidi_input_toggled == 1 then
     kmidi_input_toggled = 0
 endif
 
+; this might be confusing to read. We only do momentary input tapping from osc OR midi. 
+kosc_input_tap OSClisten gihandle, StapInputOscAddress, "f", kosc_momentary_input_on
+if kosc_momentary_input_on == 1 then
+    if (kosc_input_tap == 1.0 && kosc_momentary_in_progress == 0 && kmidi_momentary_in_progress == 0) then
+        kinput_on_off = (kinput_on_off == 0 ? 1 : 0)
+        kosc_momentary_in_progress = 1
+        OSCsend kcycles, SDestIP, 9000, SinputToggleOscAddress, "f", kinput_on_off 
+        ; printks "on", .001
+    endif 
+elseif (kosc_momentary_input_on == 0 && kosc_momentary_in_progress == 1) then
+        kinput_on_off = (kinput_on_off == 0 ? 1 : 0)
+        kosc_momentary_in_progress = 0
+        OSCsend kcycles, SDestIP, 9000, SinputToggleOscAddress, "f", kinput_on_off     
+        ; printks "off", .001
+endif 
 
-if (kmidi_momentary_input_on == 1 && kmidi_momentary_in_progress == 0) then
+if (kmidi_momentary_input_on == 1 && kmidi_momentary_in_progress == 0 && kosc_momentary_in_progress == 0) then
     kinput_on_off = (kinput_on_off == 0 ? 1 : 0)
     kmidi_momentary_in_progress = 1
     OSCsend kcycles, SDestIP, 9000, SinputToggleOscAddress, "f", kinput_on_off 
@@ -618,10 +637,10 @@ endif
 
 <CsScore>
 i98 0 3600 "/5/toggle_tempo" 9000
-i100.1 0 3600  "/1/fader1"  "/1/fader2"   "/1/toggle1"  "/1/toggle2"   "/1/fader3"  "/1/fader4"  "/1/push1" "/1/push2" "/1/push3"  9000 0 0 "/pager1"
-i100.2 0 3600  "/2/fader1"  "/2/fader2"   "/2/toggle1"  "/2/toggle2"   "/2/fader3"  "/2/fader4"  "/2/push1" "/2/push2" "/2/push3"  9000 0 1 "/pager1"
-i100.3 0 3600  "/3/fader1"  "/3/fader2"   "/3/toggle1"  "/3/toggle2"   "/3/fader3"  "/3/fader4"  "/3/push1" "/3/push2" "/3/push3"  9000 0 2 "/pager1"
-i100.4 0 3600  "/4/fader1"  "/4/fader2"   "/4/toggle1"  "/4/toggle2"   "/4/fader3"  "/4/fader4"  "/4/push1" "/4/push2" "/4/push3"  9000 0 3 "/pager1"
+i100.1 0 3600  "/1/fader1"  "/1/fader2"   "/1/toggle1"  "/1/toggle2"   "/1/fader3"  "/1/fader4"  "/1/push1" "/1/push2" "/1/push3" "/1/itap" 9000 0 0 "/pager1"
+i100.2 0 3600  "/2/fader1"  "/2/fader2"   "/2/toggle1"  "/2/toggle2"   "/2/fader3"  "/2/fader4"  "/2/push1" "/2/push2" "/2/push3" "/2/itap" 9000 0 1 "/pager1"
+i100.3 0 3600  "/3/fader1"  "/3/fader2"   "/3/toggle1"  "/3/toggle2"   "/3/fader3"  "/3/fader4"  "/3/push1" "/3/push2" "/3/push3" "/3/itap" 9000 0 2 "/pager1"
+i100.4 0 3600  "/4/fader1"  "/4/fader2"   "/4/toggle1"  "/4/toggle2"   "/4/fader3"  "/4/fader4"  "/4/push1" "/4/push2" "/4/push3" "/4/itap" 9000 0 3 "/pager1"
 
 i101 0 3600
 
